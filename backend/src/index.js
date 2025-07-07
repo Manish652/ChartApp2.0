@@ -12,10 +12,9 @@ dotenv.config()
 app.use(express.urlencoded({extended:true}));
 app.use(express.json());
 import path from 'path';
-import { fileURLToPath } from 'url';
+
 const PORT = process.env.PORT || 8000;
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+
 app.use(cors(
     {
         origin: process.env.NODE_ENV === 'production' 
@@ -40,10 +39,10 @@ app.use("/api/auth",authRouter);
 app.use("/api/messages",messageRoutes);
 
 if(process.env.NODE_ENV === 'production'){
-    app.use(express.static(path.join(__dirname,"../../frontend/dist")));
+    app.use(express.static(path.join(process.cwd(), '../frontend/dist')));
 
     app.get("*",(req,res)=>{
-        res.sendFile(path.join(__dirname,"../../frontend","dist","index.html"));
+        res.sendFile(path.join(process.cwd(), '../frontend/dist', 'index.html'));
     })
 }
 
