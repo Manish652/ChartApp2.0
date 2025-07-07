@@ -92,48 +92,50 @@ export const useAuthStore = create(
           set({ isUpdatingProfile: false });
         }
       },
+       connectSocket: () => {
+        const { authUser } = get();
+        const socket = useSocketStore.getState().socket;
+        
+        // Don't connect if no user or already connected
+        if (!authUser || socket?.connected) return;
+        
+        // Create new socket connection
+        const newSocket = io(BASE_URL, {
+          path: "/socket.io",
+          autoConnect: true,
+          reconnection: true,
+          reconnectionAttempts: 5,
+          reconnectionDelay: 1000,
+          withCredentials: true
+        });
 
-      connectSocket: () => {
-  const { authUser } = get();
-  const socket = useSocketStore.getState().socket;
+        // Socket event handlers
+        newSocket.on("connect", () => {
+          console.log("Socket connected with ID:", newSocket.id);
+          // Send setup event with user ID
+          newSocket.emit("setup", authUser._id);
+        });
 
-  // Don't connect if no user or already connected
-  if (!authUser || socket?.connected) return;
+        newSocket.on("disconnect", () => {
+          console.log("Socket disconnected");
+          set({ onlineUsers: [] });
+        });
 
-  const newSocket = io(
-    import.meta.env.MODE === "development" ? "http://localhost:3000" : undefined,
-    {
-      path: "/socket.io",
-      autoConnect: true,
-      reconnection: true,
-      reconnectionAttempts: 5,
-      reconnectionDelay: 1000,
-      withCredentials: true
-    }
-  );
+        newSocket.on("error", (error) => {
+          console.error("Socket error:", error);
+        });
 
-  newSocket.on("connect", () => {
-    console.log("Socket connected with ID:", newSocket.id);
-    newSocket.emit("setup", authUser._id);
-  });
+        newSocket.on("getOnlineUsers", (userIds) => {
+          console.log("Online users updated:", userIds);
+          set({ onlineUsers: userIds.filter(id => id !== authUser._id) });
+        });
 
-  newSocket.on("disconnect", () => {
-    console.log("Socket disconnected");
-    set({ onlineUsers: [] });
-  });
+        // Store the socket instance
+        useSocketStore.getState().setSocket(newSocket);
+      },
 
-  newSocket.on("error", (error) => {
-    console.error("Socket error:", error);
-  });
 
-  newSocket.on("getOnlineUsers", (userIds) => {
-    console.log("Online users updated:", userIds);
-    set({ onlineUsers: userIds.filter(id => id !== authUser._id) });
-  });
-
-  useSocketStore.getState().setSocket(newSocket);
-},
-
+   
       disconnectSocket: () => {
         const socket = useSocketStore.getState().socket;
         if (socket?.connected) {
