@@ -4,7 +4,9 @@ import axiosInstance from "../lib/axios.js";
 import toast from "react-hot-toast";
 import { io } from "socket.io-client";
 
-const BASE_URL = import.meta.env.MODE == "development" ? "http://localhost:3000" : "/";
+const BASE_URL = import.meta.env.MODE === "development"
+  ? "http://localhost:3000"
+  : import.meta.env.VITE_BACKEND_URL || "https://chartapp2-0-kslf.onrender.com";
 
 // Create a separate store for socket that won't be persisted
 export const useSocketStore = create((set) => ({
